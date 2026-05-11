@@ -263,11 +263,16 @@ async function getAccessToken() {
     return null;
   }
 
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
+  try {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
 
-  return session?.access_token || null;
+    return session?.access_token || null;
+  } catch (error) {
+    console.warn("Supabase session could not be refreshed.", error);
+    return null;
+  }
 }
 
 export default function Home() {
@@ -361,15 +366,26 @@ export default function Home() {
     }
 
     const timeoutId = window.setTimeout(() => {
-      void supabase.auth.getUser().then(({ data }) => {
-        setUser(data.user);
-        if (data.user) {
-          void fetchHistory();
-        } else {
+      void supabase.auth
+        .getUser()
+        .then(({ data }) => {
+          setUser(data.user);
+          if (data.user) {
+            void fetchHistory();
+          } else {
+            setHistory([]);
+            setHistoryStatus("Sign in to save and view analysis history.");
+          }
+        })
+        .catch((error) => {
+          console.warn("Supabase user session could not be loaded.", error);
+          setUser(null);
           setHistory([]);
+          setAuthMessage(
+            "Supabase Auth session could not be refreshed. Please sign in again.",
+          );
           setHistoryStatus("Sign in to save and view analysis history.");
-        }
-      });
+        });
     }, 0);
 
     const {

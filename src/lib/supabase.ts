@@ -2,6 +2,14 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 let browserClient: SupabaseClient | null | undefined;
 
+const browserClientOptions = {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: false,
+  },
+};
+
 function getSupabaseEnv() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -46,6 +54,11 @@ export function getSupabaseClient(accessToken?: string) {
 
   if (accessToken) {
     return createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+        detectSessionInUrl: false,
+      },
       global: {
         headers: {
           Authorization: `Bearer ${accessToken}`,
@@ -55,11 +68,21 @@ export function getSupabaseClient(accessToken?: string) {
   }
 
   if (typeof window === "undefined") {
-    return createClient(supabaseUrl, supabaseAnonKey);
+    return createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+        detectSessionInUrl: false,
+      },
+    });
   }
 
   if (browserClient === undefined) {
-    browserClient = createClient(supabaseUrl, supabaseAnonKey);
+    browserClient = createClient(
+      supabaseUrl,
+      supabaseAnonKey,
+      browserClientOptions,
+    );
   }
 
   return browserClient;
